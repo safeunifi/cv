@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -7,7 +7,7 @@ import {
   ScrollView,
   ActivityIndicator,
 } from 'react-native';
-import { Video, ResizeMode, AVPlaybackStatus } from 'expo-av';
+import { useVideoPlayer, VideoView } from 'expo-video';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { generateId as uuid } from '../utils/id';
@@ -27,21 +27,23 @@ export default function ReviewScreen() {
     duration: number;
   };
 
-  const videoRef = useRef<Video>(null);
+  const player = useVideoPlayer(videoUri, (p) => {
+    p.loop = true;
+    p.play();
+  });
   const [playbackRate, setPlaybackRate] = useState(1.0);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysis, setAnalysis] = useState<SwingAnalysis | null>(null);
 
   const rates = [0.25, 0.5, 1.0];
 
-  const changeRate = async (rate: number) => {
+  const changeRate = (rate: number) => {
     setPlaybackRate(rate);
-    await videoRef.current?.setRateAsync(rate, true);
+    player.playbackRate = rate;
   };
 
-  const replay = async () => {
-    await videoRef.current?.setPositionAsync(0);
-    await videoRef.current?.playAsync();
+  const replay = () => {
+    player.replay();
   };
 
   const runAnalysis = async () => {
@@ -79,14 +81,11 @@ export default function ReviewScreen() {
   return (
     <View style={styles.container}>
       {/* Video Player */}
-      <Video
-        ref={videoRef}
-        source={{ uri: videoUri }}
+      <VideoView
+        player={player}
         style={styles.video}
-        resizeMode={ResizeMode.CONTAIN}
-        shouldPlay
-        isLooping
-        rate={playbackRate}
+        contentFit="contain"
+        nativeControls={false}
       />
 
       {/* Playback Controls */}
