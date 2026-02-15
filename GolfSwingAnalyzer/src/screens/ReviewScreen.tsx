@@ -10,7 +10,7 @@ import {
 import { Video, ResizeMode, AVPlaybackStatus } from 'expo-av';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, useRoute } from '@react-navigation/native';
-import { v4 as uuid } from 'uuid';
+import { generateId as uuid } from '../utils/id';
 import { Colors, scoreColor } from '../utils/theme';
 import { CameraAngle, CameraAngleLabels, ClubType, SwingSession, SwingAnalysis } from '../models/types';
 import { analyzeSwing, scoreGrade } from '../services/SwingAnalyzer';

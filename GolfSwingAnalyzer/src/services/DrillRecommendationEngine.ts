@@ -1,4 +1,4 @@
-import { v4 as uuid } from 'uuid';
+import { generateId as uuid } from '../utils/id';
 import { SwingFault, DrillRecommendation } from '../models/types';
 
 const FAULT_TO_DRILLS: Record<string, string[]> = {
