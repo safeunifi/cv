@@ -47,14 +47,31 @@ export default function ReviewScreen() {
   };
 
   const runAnalysis = async () => {
+    // Polyfill crypto.getRandomValues at runtime if missing.
+    // uuid (transitive dep) captures this reference at module load;
+    // re-assigning here patches it for any lazy-loaded modules.
+    if (typeof globalThis.crypto === 'undefined') {
+      (globalThis as any).crypto = {};
+    }
+    if (!(globalThis.crypto as any).getRandomValues) {
+      (globalThis.crypto as any).getRandomValues = function (arr: any) {
+        for (let i = 0; i < arr.length; i++) arr[i] = Math.floor(Math.random() * 256);
+        return arr;
+      };
+    }
+
     setIsAnalyzing(true);
     try {
+      console.log('[SwingCoach] runAnalysis v7 — starting');
       const durationMs = Math.max(duration * 1000, 3000);
+      console.log('[SwingCoach] extracting pose frames...');
       const frames = await extractPoseFrames(videoUri, durationMs, 30);
+      console.log('[SwingCoach] got', frames.length, 'frames, analyzing...');
       const result = analyzeSwing(frames, cameraAngle);
+      console.log('[SwingCoach] analysis complete, score:', result.overallScore);
       setAnalysis(result);
     } catch (err: any) {
-      console.error('Analysis failed:', err);
+      console.error('Analysis failed:', err?.message ?? err);
     }
     setIsAnalyzing(false);
   };
