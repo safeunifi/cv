@@ -1,13 +1,16 @@
 import { View, Text, ScrollView, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
-import { Dumbbell, ListChecks, Clock, Library } from 'lucide-react-native';
+import { Dumbbell, ListChecks, Clock, Library, Video } from 'lucide-react-native';
 import { useFitnessStore } from '@/stores/fitness-store';
+import { useAuthStore } from '@/stores/auth-store';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 
 export default function FitnessScreen() {
   const { activePlan } = useFitnessStore();
+  const profile = useAuthStore((s) => s.profile);
+  const showGolf = profile?.golfExperience && profile.golfExperience !== 'none';
 
   return (
     <SafeAreaView className="flex-1 bg-sand-50">
@@ -20,6 +23,28 @@ export default function FitnessScreen() {
         <View className="pt-4 pb-4">
           <Text className="font-inter-bold text-2xl text-sand-900">Fitness</Text>
         </View>
+
+        {/* Swing Analysis Card - shown when golf experience is set */}
+        {showGolf && (
+          <Card
+            onPress={() => router.push('/(tabs)/fitness/swing')}
+            className="mb-4"
+          >
+            <View className="flex-row items-center gap-4">
+              <View className="w-14 h-14 rounded-2xl bg-green-500 items-center justify-center">
+                <Video size={28} color="#fff" />
+              </View>
+              <View className="flex-1">
+                <Text className="font-inter-bold text-lg text-sand-900">
+                  Swing Analysis
+                </Text>
+                <Text className="font-inter text-sm text-sand-500 mt-0.5">
+                  Record, analyze & improve your golf swing
+                </Text>
+              </View>
+            </View>
+          </Card>
+        )}
 
         {/* Active Plan or Generate */}
         {activePlan ? (
