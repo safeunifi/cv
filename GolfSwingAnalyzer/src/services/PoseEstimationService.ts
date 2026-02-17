@@ -1,19 +1,17 @@
-import * as VideoThumbnails from 'expo-video-thumbnails';
 import { PoseFrame, JointName } from '../models/types';
 
 /**
- * Extracts frames from recorded video and generates simulated pose data
- * for analysis.
+ * Generates simulated pose data for swing analysis.
  *
  * NOTE: For production App Store release, integrate one of:
  *   - Google ML Kit Pose Detection (via expo dev client)
  *   - TensorFlow.js + MoveNet (works in Expo Go with expo-gl)
  *   - Apple Vision via native module
  *
- * This service currently uses video thumbnail extraction + a pose
- * estimation algorithm based on frame analysis. For personal use and
- * testing, this provides the analysis pipeline. The pose detection
- * model can be swapped in without changing any other code.
+ * This service currently generates anatomically-modeled pose data
+ * that follows a realistic golf swing progression. The pose detection
+ * model can be swapped in without changing any other code — just
+ * replace the body of extractPoseFrames to feed real frames to ML.
  */
 
 const JOINT_NAMES: JointName[] = [
@@ -28,14 +26,18 @@ const JOINT_NAMES: JointName[] = [
 ];
 
 /**
- * Extract frames from a video at regular intervals and generate pose data.
+ * Generate pose frames for a recorded video.
  *
- * @param videoUri - The file URI of the recorded video
+ * Currently produces simulated poses based on swing timing. When a real
+ * ML pose model is integrated, this function should extract video frames
+ * (e.g. via expo-video-thumbnails) and feed them to the model.
+ *
+ * @param videoUri - The file URI of the recorded video (unused until ML integration)
  * @param durationMs - Duration of the video in milliseconds
- * @param numFrames - Number of frames to extract (default 30)
+ * @param numFrames - Number of frames to generate (default 30)
  */
 export async function extractPoseFrames(
-  videoUri: string,
+  _videoUri: string,
   durationMs: number,
   numFrames: number = 30,
 ): Promise<PoseFrame[]> {
@@ -44,25 +46,12 @@ export async function extractPoseFrames(
 
   for (let i = 0; i < numFrames; i++) {
     const timeMs = Math.floor(i * interval);
+    const pose = generatePoseForFrame(i, numFrames);
 
-    try {
-      // Extract a thumbnail at this timestamp
-      const { uri } = await VideoThumbnails.getThumbnailAsync(videoUri, {
-        time: timeMs,
-        quality: 0.5,
-      });
-
-      // Generate pose estimation for this frame
-      // In production, this is where you'd feed the image to ML Kit / TensorFlow.js
-      const pose = generatePoseForFrame(i, numFrames);
-
-      frames.push({
-        timestamp: timeMs / 1000,
-        joints: pose,
-      });
-    } catch {
-      // Skip frames that fail to extract
-    }
+    frames.push({
+      timestamp: timeMs / 1000,
+      joints: pose,
+    });
   }
 
   return frames;

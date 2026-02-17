@@ -7,8 +7,7 @@
     "android": "expo start --android",
     "ios": "expo start --ios",
     "web": "expo start --web",
-    "lint": "eslint .",
-    "postinstall": "node scripts/patch-uuid.js"
+    "lint": "eslint ."
   },
   "dependencies": {
     "@react-native-async-storage/async-storage": "~2.1.0",
@@ -21,7 +20,6 @@
     "expo-media-library": "~17.0.0",
     "expo-status-bar": "~2.2.0",
     "expo-video": "^3.0.16",
-    "expo-video-thumbnails": "~9.0.0",
     "react": "19.1.0",
     "react-native": "0.81.4",
     "react-native-safe-area-context": "~5.6.0",
