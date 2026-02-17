@@ -7,7 +7,8 @@
     "android": "expo start --android",
     "ios": "expo start --ios",
     "web": "expo start --web",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "postinstall": "node scripts/patch-uuid.js"
   },
   "dependencies": {
     "@react-native-async-storage/async-storage": "~2.1.0",
