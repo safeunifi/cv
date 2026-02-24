@@ -3,12 +3,16 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { ArrowLeft } from 'lucide-react-native';
 import { useSettingsStore } from '@/stores/settings-store';
+import { useAuthStore } from '@/stores/auth-store';
 import { Card } from '@/components/ui/Card';
 import { Toggle } from '@/components/ui/Toggle';
 import { Pill } from '@/components/ui/Pill';
 
 export default function SettingsScreen() {
   const settings = useSettingsStore();
+  const profile = useAuthStore((s) => s.profile);
+  const updateProfile = useAuthStore((s) => s.updateProfile);
+  const golfExperience = profile?.golfExperience ?? 'none';
 
   return (
     <SafeAreaView className="flex-1 bg-sand-50">
@@ -65,6 +69,36 @@ export default function SettingsScreen() {
               label="Water Reminders"
               value={settings.waterReminders}
               onToggle={settings.setWaterReminders}
+            />
+          </View>
+        </Card>
+
+        {/* Golf Experience */}
+        <Card className="mb-4">
+          <Text className="font-inter-semibold text-base text-sand-800 mb-1">Golf Experience</Text>
+          <Text className="font-inter text-sm text-sand-500 mb-3">
+            Enables Swing Analysis on the Fitness tab
+          </Text>
+          <View className="flex-row flex-wrap gap-2">
+            <Pill
+              label="None"
+              selected={golfExperience === 'none'}
+              onPress={() => updateProfile({ golfExperience: 'none' })}
+            />
+            <Pill
+              label="Beginner"
+              selected={golfExperience === 'beginner'}
+              onPress={() => updateProfile({ golfExperience: 'beginner' })}
+            />
+            <Pill
+              label="Intermediate"
+              selected={golfExperience === 'intermediate'}
+              onPress={() => updateProfile({ golfExperience: 'intermediate' })}
+            />
+            <Pill
+              label="Advanced"
+              selected={golfExperience === 'advanced'}
+              onPress={() => updateProfile({ golfExperience: 'advanced' })}
             />
           </View>
         </Card>
