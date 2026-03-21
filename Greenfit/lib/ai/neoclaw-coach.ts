@@ -125,7 +125,6 @@ export async function streamCoachResponse({
         max_tokens: 1024,
         stream: true,
         system: systemPrompt,
-        thinking: { type: 'adaptive' },
         messages: messages.map((m) => ({ role: m.role, content: m.content })),
       }),
     });
