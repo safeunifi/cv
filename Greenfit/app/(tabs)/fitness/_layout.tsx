@@ -19,6 +19,7 @@ export default function FitnessLayout() {
       <Stack.Screen name="swing/drills" />
       <Stack.Screen name="swing/drill-detail" />
       <Stack.Screen name="swing/progress" />
+      <Stack.Screen name="swing/swing-workout" />
     </Stack>
   );
 }

@@ -1,7 +1,7 @@
 import { View, Text, ScrollView, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
-import { Plus, ChevronLeft, ChevronRight } from 'lucide-react-native';
+import { Plus, ChevronLeft, ChevronRight, Camera, Fuel } from 'lucide-react-native';
 import { useAuthStore } from '@/stores/auth-store';
 import { useNutritionStore } from '@/stores/nutrition-store';
 import { Card } from '@/components/ui/Card';
@@ -21,6 +21,7 @@ export default function NutritionScreen() {
   const { profile } = useAuthStore();
   const { todayEntries, dailySummary } = useNutritionStore();
   const [selectedDate, setSelectedDate] = useState(new Date());
+  const showGolf = profile?.golfExperience && profile.golfExperience !== 'none';
 
   const dateStr = format(selectedDate, 'yyyy-MM-dd');
   const isToday = format(new Date(), 'yyyy-MM-dd') === dateStr;
@@ -138,6 +139,48 @@ export default function NutritionScreen() {
             </Card>
           );
         })}
+
+        {/* AI Meal Scanner */}
+        <Card
+          onPress={() => router.push('/(tabs)/nutrition/meal-scanner')}
+          className="mt-2 mb-3"
+        >
+          <View className="flex-row items-center gap-4">
+            <View className="w-14 h-14 rounded-2xl bg-green-500 items-center justify-center">
+              <Camera size={28} color="#fff" />
+            </View>
+            <View className="flex-1">
+              <Text className="font-inter-bold text-lg text-sand-900">
+                Meal Scanner
+              </Text>
+              <Text className="font-inter text-sm text-sand-500 mt-0.5">
+                Snap a meal, get a healthier version with recipe
+              </Text>
+            </View>
+          </View>
+        </Card>
+
+        {/* Course Fuel - shown for golfers */}
+        {showGolf && (
+          <Card
+            onPress={() => router.push('/(tabs)/nutrition/course-fuel')}
+            className="mb-3"
+          >
+            <View className="flex-row items-center gap-4">
+              <View className="w-14 h-14 rounded-2xl bg-earth-500 items-center justify-center">
+                <Fuel size={28} color="#fff" />
+              </View>
+              <View className="flex-1">
+                <Text className="font-inter-bold text-lg text-sand-900">
+                  Course Fuel
+                </Text>
+                <Text className="font-inter text-sm text-sand-500 mt-0.5">
+                  On-course snacks & hydration for your round
+                </Text>
+              </View>
+            </View>
+          </Card>
+        )}
 
         {/* Quick Links */}
         <View className="flex-row gap-3 mt-2">

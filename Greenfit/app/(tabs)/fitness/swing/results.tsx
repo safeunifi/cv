@@ -113,6 +113,25 @@ export default function SwingResultsScreen() {
         </View>
       )}
 
+      {/* Fix Your Swing Workout */}
+      {analysis.faults.length > 0 && (
+        <TouchableOpacity
+          style={styles.workoutCta}
+          onPress={() => router.push('/(tabs)/fitness/swing/swing-workout')}
+        >
+          <View style={styles.workoutCtaIcon}>
+            <Dumbbell size={24} color="#fff" />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.workoutCtaTitle}>Fix Your Swing Workout</Text>
+            <Text style={styles.workoutCtaSubtitle}>
+              Targeted exercises for your {analysis.faults.length} detected fault{analysis.faults.length !== 1 ? 's' : ''}
+            </Text>
+          </View>
+          <ChevronRight size={20} color="#fff" />
+        </TouchableOpacity>
+      )}
+
       {/* Recommended Drills */}
       {analysis.recommendations.length > 0 && (
         <View style={styles.card}>
@@ -249,6 +268,17 @@ const styles = StyleSheet.create({
 
   strengthRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   strengthText: { color: GolfColors.text, fontSize: 14 },
+
+  workoutCta: {
+    flexDirection: 'row', alignItems: 'center', backgroundColor: GolfColors.primary,
+    borderRadius: 14, padding: 16, gap: 14,
+  },
+  workoutCtaIcon: {
+    width: 48, height: 48, borderRadius: 12, backgroundColor: 'rgba(255,255,255,0.2)',
+    justifyContent: 'center', alignItems: 'center',
+  },
+  workoutCtaTitle: { color: '#fff', fontSize: 16, fontWeight: '700' },
+  workoutCtaSubtitle: { color: 'rgba(255,255,255,0.8)', fontSize: 12, marginTop: 2 },
 
   drillRecommendation: { flexDirection: 'row', alignItems: 'center', backgroundColor: GolfColors.surfaceLight, borderRadius: 10, padding: 12, gap: 12 },
   drillIcon: { width: 44, height: 44, borderRadius: 10, backgroundColor: 'rgba(74,124,89,0.1)', justifyContent: 'center', alignItems: 'center' },
