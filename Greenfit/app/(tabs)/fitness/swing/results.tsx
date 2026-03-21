@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
 import { router } from 'expo-router';
-import { Gauge, BarChart3, AlertTriangle, Star, Target, ChevronUp, ChevronDown, ChevronLeft, ArrowRight, ArrowRightCircle, CheckCircle2, Lightbulb, Dumbbell, ChevronRight } from 'lucide-react-native';
+import { Gauge, BarChart3, AlertTriangle, Star, Target, ChevronUp, ChevronDown, ChevronLeft, ArrowRight, ArrowRightCircle, CheckCircle2, Lightbulb, Dumbbell, ChevronRight, Bot } from 'lucide-react-native';
 import { GolfColors, scoreColor, severityColor, difficultyColor } from '@/constants/golf-theme';
 import { SWING_PHASES, SwingPhaseLabels } from '@/types/golf';
 import type { PhaseAnalysis, SwingFault } from '@/types/golf';
@@ -131,6 +131,23 @@ export default function SwingResultsScreen() {
           <ChevronRight size={20} color="#fff" />
         </TouchableOpacity>
       )}
+
+      {/* NemoClaw AI Coach */}
+      <TouchableOpacity
+        style={styles.aiCoachCta}
+        onPress={() => router.push('/(tabs)/fitness/swing/ai-coach')}
+      >
+        <View style={styles.aiCoachIcon}>
+          <Bot size={24} color={GolfColors.primary} />
+        </View>
+        <View style={{ flex: 1 }}>
+          <Text style={styles.aiCoachTitle}>Ask Your AI Coach</Text>
+          <Text style={styles.aiCoachSubtitle}>
+            NemoClaw AI — personalized coaching from your swing data
+          </Text>
+        </View>
+        <ChevronRight size={20} color={GolfColors.primary} />
+      </TouchableOpacity>
 
       {/* Recommended Drills */}
       {analysis.recommendations.length > 0 && (
@@ -279,6 +296,18 @@ const styles = StyleSheet.create({
   },
   workoutCtaTitle: { color: '#fff', fontSize: 16, fontWeight: '700' },
   workoutCtaSubtitle: { color: 'rgba(255,255,255,0.8)', fontSize: 12, marginTop: 2 },
+
+  aiCoachCta: {
+    flexDirection: 'row', alignItems: 'center',
+    backgroundColor: GolfColors.surface, borderRadius: 14, padding: 16, gap: 14,
+    borderWidth: 2, borderColor: GolfColors.primaryLight,
+  },
+  aiCoachIcon: {
+    width: 48, height: 48, borderRadius: 12, backgroundColor: 'rgba(74,124,89,0.1)',
+    justifyContent: 'center', alignItems: 'center',
+  },
+  aiCoachTitle: { color: GolfColors.text, fontSize: 16, fontWeight: '700' },
+  aiCoachSubtitle: { color: GolfColors.textSecondary, fontSize: 12, marginTop: 2 },
 
   drillRecommendation: { flexDirection: 'row', alignItems: 'center', backgroundColor: GolfColors.surfaceLight, borderRadius: 10, padding: 12, gap: 12 },
   drillIcon: { width: 44, height: 44, borderRadius: 10, backgroundColor: 'rgba(74,124,89,0.1)', justifyContent: 'center', alignItems: 'center' },

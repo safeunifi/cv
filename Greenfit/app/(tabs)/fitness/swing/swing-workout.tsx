@@ -1,43 +1,86 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView, ActivityIndicator } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView, ActivityIndicator, Alert } from 'react-native';
 import { router } from 'expo-router';
-import { ChevronLeft, Clock, Dumbbell, Flame, Snowflake, Play } from 'lucide-react-native';
+import { ChevronLeft, Clock, Dumbbell, Flame, Snowflake, Play, CheckCircle2 } from 'lucide-react-native';
 import { GolfColors, severityColor } from '@/constants/golf-theme';
 import { useSwingStore } from '@/stores/swing-store';
 import { useAuthStore } from '@/stores/auth-store';
 import { useFitnessStore } from '@/stores/fitness-store';
 import { generateSwingWorkout } from '@/lib/golf/swing-workout';
+import { FALLBACK_GOLF_EXERCISES } from '@/lib/golf/fallback-exercises';
 import type { SwingWorkoutPlan, SwingWorkoutExercise } from '@/lib/golf/swing-workout';
 
 export default function SwingWorkoutScreen() {
   const { currentAnalysis } = useSwingStore();
   const profile = useAuthStore((s) => s.profile);
-  const { exercises, fetchExercises } = useFitnessStore();
+  const { exercises, fetchExercises, startWorkout } = useFitnessStore();
   const [plan, setPlan] = useState<SwingWorkoutPlan | null>(null);
   const [loading, setLoading] = useState(true);
+  const [completedExercises, setCompletedExercises] = useState<Set<string>>(new Set());
 
   useEffect(() => {
-    async function load() {
-      // Ensure exercises are loaded from Supabase
-      if (exercises.length === 0) {
-        await fetchExercises();
-      }
-    }
-    load();
+    // Try to load from Supabase but don't block on it
+    fetchExercises().catch(() => {});
   }, []);
 
   useEffect(() => {
-    if (!currentAnalysis || exercises.length === 0) return;
+    if (!currentAnalysis) return;
+
+    // Use Supabase exercises if available, otherwise fall back to built-in library
+    const exercisePool = exercises.length > 0 ? exercises : FALLBACK_GOLF_EXERCISES;
+    const injuryAreas = profile?.injuryAreas || [];
+    const equipmentTier = profile?.equipmentTier || 'none';
+
+    // Filter fallback exercises for injury contraindications
+    const filteredPool = exercisePool.filter(
+      (ex) => !injuryAreas.some((area) => ex.contraindicatedAreas.includes(area))
+    );
 
     const workout = generateSwingWorkout(
       currentAnalysis,
-      exercises,
-      profile?.equipmentTier || 'none',
-      profile?.injuryAreas || []
+      filteredPool,
+      equipmentTier,
+      injuryAreas
     );
     setPlan(workout);
     setLoading(false);
   }, [currentAnalysis, exercises]);
+
+  const handleStartWorkout = () => {
+    if (!plan) return;
+
+    const allExercises = [...plan.warmup, ...plan.main, ...plan.cooldown];
+    startWorkout({
+      workoutLogId: null,
+      dayName: plan.title,
+      exercises: allExercises.map((item) => ({
+        exerciseId: item.exercise.id,
+        exerciseName: item.exercise.name,
+        prescribedSets: item.sets,
+        prescribedReps: item.repRange,
+        restSeconds: item.restSeconds,
+        completedSets: [],
+      })),
+      startedAt: new Date().toISOString(),
+      currentExerciseIndex: 0,
+      isResting: false,
+      restTimeRemaining: 0,
+    });
+
+    router.push('/(tabs)/fitness/log/index');
+  };
+
+  const toggleComplete = (exerciseId: string) => {
+    setCompletedExercises((prev) => {
+      const next = new Set(prev);
+      if (next.has(exerciseId)) {
+        next.delete(exerciseId);
+      } else {
+        next.add(exerciseId);
+      }
+      return next;
+    });
+  };
 
   if (!currentAnalysis) {
     return (
@@ -62,11 +105,12 @@ export default function SwingWorkoutScreen() {
 
   if (!plan) return null;
 
-  const faultNames = currentAnalysis.faults.map((f) => f.name);
+  const allCount = plan.warmup.length + plan.main.length + plan.cooldown.length;
+  const doneCount = completedExercises.size;
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      {/* Header */}
+      {/* Back */}
       <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
         <ChevronLeft size={24} color={GolfColors.text} />
         <Text style={styles.backText}>Back</Text>
@@ -83,9 +127,24 @@ export default function SwingWorkoutScreen() {
         </View>
         <View style={styles.stat}>
           <Dumbbell size={16} color={GolfColors.primary} />
-          <Text style={styles.statValue}>{plan.warmup.length + plan.main.length + plan.cooldown.length} exercises</Text>
+          <Text style={styles.statValue}>{allCount} exercises</Text>
         </View>
+        {doneCount > 0 && (
+          <View style={styles.stat}>
+            <CheckCircle2 size={16} color={GolfColors.scoreExcellent} />
+            <Text style={[styles.statValue, { color: GolfColors.scoreExcellent }]}>
+              {doneCount}/{allCount} done
+            </Text>
+          </View>
+        )}
       </View>
+
+      {/* Progress bar */}
+      {allCount > 0 && (
+        <View style={styles.progressBarBg}>
+          <View style={[styles.progressBarFill, { width: `${(doneCount / allCount) * 100}%` }]} />
+        </View>
+      )}
 
       {/* Targeted faults */}
       <View style={styles.faultTags}>
@@ -98,23 +157,55 @@ export default function SwingWorkoutScreen() {
         ))}
       </View>
 
-      {/* Warmup Section */}
+      {/* Start Workout Button */}
+      <TouchableOpacity style={styles.startButton} onPress={handleStartWorkout}>
+        <Play size={20} color="#fff" fill="#fff" />
+        <Text style={styles.startButtonText}>Start Workout Session</Text>
+      </TouchableOpacity>
+
+      {/* Warmup */}
       <SectionHeader icon={<Flame size={18} color="#E67E22" />} title="Warmup" color="#E67E22" />
       {plan.warmup.map((ex, i) => (
-        <ExerciseCard key={ex.exercise.id + i} item={ex} index={i + 1} />
+        <ExerciseCard
+          key={ex.exercise.id + i}
+          item={ex}
+          index={i + 1}
+          done={completedExercises.has(ex.exercise.id + '-warmup')}
+          onToggle={() => toggleComplete(ex.exercise.id + '-warmup')}
+        />
       ))}
 
-      {/* Main Workout */}
+      {/* Main */}
       <SectionHeader icon={<Dumbbell size={18} color={GolfColors.primary} />} title="Swing Fix Exercises" color={GolfColors.primary} />
       {plan.main.map((ex, i) => (
-        <ExerciseCard key={ex.exercise.id + i} item={ex} index={i + 1} />
+        <ExerciseCard
+          key={ex.exercise.id + i}
+          item={ex}
+          index={i + 1}
+          done={completedExercises.has(ex.exercise.id + '-main')}
+          onToggle={() => toggleComplete(ex.exercise.id + '-main')}
+        />
       ))}
 
       {/* Cooldown */}
       <SectionHeader icon={<Snowflake size={18} color="#3498DB" />} title="Cooldown" color="#3498DB" />
       {plan.cooldown.map((ex, i) => (
-        <ExerciseCard key={ex.exercise.id + i} item={ex} index={i + 1} />
+        <ExerciseCard
+          key={ex.exercise.id + i}
+          item={ex}
+          index={i + 1}
+          done={completedExercises.has(ex.exercise.id + '-cool')}
+          onToggle={() => toggleComplete(ex.exercise.id + '-cool')}
+        />
       ))}
+
+      {/* Finish banner */}
+      {doneCount === allCount && allCount > 0 && (
+        <View style={styles.finishBanner}>
+          <CheckCircle2 size={24} color={GolfColors.scoreExcellent} />
+          <Text style={styles.finishText}>Workout Complete! Great work.</Text>
+        </View>
+      )}
 
       <View style={{ height: 40 }} />
     </ScrollView>
@@ -130,15 +221,32 @@ function SectionHeader({ icon, title, color }: { icon: React.ReactNode; title: s
   );
 }
 
-function ExerciseCard({ item, index }: { item: SwingWorkoutExercise; index: number }) {
+function ExerciseCard({
+  item,
+  index,
+  done,
+  onToggle,
+}: {
+  item: SwingWorkoutExercise;
+  index: number;
+  done: boolean;
+  onToggle: () => void;
+}) {
   const ex = item.exercise;
   return (
-    <View style={styles.exerciseCard}>
-      <View style={styles.exerciseIndex}>
-        <Text style={styles.exerciseIndexText}>{index}</Text>
+    <TouchableOpacity
+      style={[styles.exerciseCard, done && styles.exerciseCardDone]}
+      onPress={onToggle}
+      activeOpacity={0.8}
+    >
+      <View style={[styles.exerciseIndex, done && styles.exerciseIndexDone]}>
+        {done
+          ? <CheckCircle2 size={18} color="#fff" />
+          : <Text style={styles.exerciseIndexText}>{index}</Text>
+        }
       </View>
       <View style={styles.exerciseInfo}>
-        <Text style={styles.exerciseName}>{ex.name}</Text>
+        <Text style={[styles.exerciseName, done && styles.textDone]}>{ex.name}</Text>
         <Text style={styles.exerciseMeta}>
           {item.sets} sets · {item.repRange} · {item.restSeconds}s rest
         </Text>
@@ -147,12 +255,10 @@ function ExerciseCard({ item, index }: { item: SwingWorkoutExercise; index: numb
           <Text style={styles.golfBenefit}>{ex.golfBenefit}</Text>
         )}
         {ex.equipmentNeeded.length > 0 && (
-          <Text style={styles.equipment}>
-            Equipment: {ex.equipmentNeeded.join(', ')}
-          </Text>
+          <Text style={styles.equipment}>Equipment: {ex.equipmentNeeded.join(', ')}</Text>
         )}
       </View>
-    </View>
+    </TouchableOpacity>
   );
 }
 
@@ -166,13 +272,22 @@ const styles = StyleSheet.create({
   title: { fontSize: 22, fontWeight: '700', color: GolfColors.text },
   description: { fontSize: 14, color: GolfColors.textSecondary, lineHeight: 20 },
 
-  statsRow: { flexDirection: 'row', gap: 20, paddingVertical: 8 },
+  statsRow: { flexDirection: 'row', gap: 20, paddingVertical: 4, flexWrap: 'wrap' },
   stat: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   statValue: { fontSize: 14, fontWeight: '600', color: GolfColors.text },
+
+  progressBarBg: { height: 6, backgroundColor: GolfColors.surfaceLight, borderRadius: 3, overflow: 'hidden' },
+  progressBarFill: { height: '100%', backgroundColor: GolfColors.scoreExcellent, borderRadius: 3 },
 
   faultTags: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   faultTag: { paddingHorizontal: 10, paddingVertical: 5, borderRadius: 12 },
   faultTagText: { fontSize: 12, fontWeight: '600' },
+
+  startButton: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+    gap: 10, backgroundColor: GolfColors.primary, borderRadius: 14, paddingVertical: 14,
+  },
+  startButtonText: { color: '#fff', fontSize: 16, fontWeight: '700' },
 
   sectionHeader: {
     flexDirection: 'row', alignItems: 'center', gap: 8,
@@ -185,15 +300,28 @@ const styles = StyleSheet.create({
     borderRadius: 12, padding: 14, gap: 12,
     borderWidth: 1, borderColor: GolfColors.border,
   },
+  exerciseCardDone: {
+    backgroundColor: 'rgba(23,184,94,0.06)',
+    borderColor: GolfColors.scoreExcellent + '44',
+  },
   exerciseIndex: {
     width: 32, height: 32, borderRadius: 16,
     backgroundColor: GolfColors.primaryLight, justifyContent: 'center', alignItems: 'center',
   },
+  exerciseIndexDone: { backgroundColor: GolfColors.scoreExcellent },
   exerciseIndexText: { fontSize: 14, fontWeight: '700', color: GolfColors.primary },
   exerciseInfo: { flex: 1, gap: 4 },
   exerciseName: { fontSize: 15, fontWeight: '600', color: GolfColors.text },
+  textDone: { color: GolfColors.textSecondary, textDecorationLine: 'line-through' },
   exerciseMeta: { fontSize: 13, color: GolfColors.primary, fontWeight: '500' },
   exerciseReason: { fontSize: 12, color: GolfColors.textSecondary, lineHeight: 17 },
   golfBenefit: { fontSize: 12, color: GolfColors.scoreGood, fontStyle: 'italic' },
   equipment: { fontSize: 11, color: GolfColors.textSecondary },
+
+  finishBanner: {
+    flexDirection: 'row', alignItems: 'center', gap: 10,
+    backgroundColor: 'rgba(23,184,94,0.1)', borderRadius: 12, padding: 16,
+    borderWidth: 1, borderColor: GolfColors.scoreExcellent + '44',
+  },
+  finishText: { fontSize: 16, fontWeight: '700', color: GolfColors.scoreExcellent },
 });
