@@ -51,32 +51,7 @@ export default function ScannerPage() {
     setMode("idle");
   }, []);
 
-  const capturePhoto = useCallback(() => {
-    if (!videoRef.current || !canvasRef.current) return;
-    const canvas = canvasRef.current;
-    const video = videoRef.current;
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
-    canvas.getContext("2d")?.drawImage(video, 0, 0);
-    const dataUrl = canvas.toDataURL("image/jpeg", 0.85);
-    setPreview(dataUrl);
-    stopCamera();
-    analyzeImage(dataUrl);
-  }, [stopCamera]);
-
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (ev) => {
-      const dataUrl = ev.target?.result as string;
-      setPreview(dataUrl);
-      analyzeImage(dataUrl);
-    };
-    reader.readAsDataURL(file);
-  };
-
-  const analyzeImage = async (dataUrl: string) => {
+  const analyzeImage = useCallback(async (dataUrl: string) => {
     setLoading(true);
     setError("");
     setResult(null);
@@ -91,6 +66,31 @@ export default function ScannerPage() {
     } finally {
       setLoading(false);
     }
+  }, []);
+
+  const capturePhoto = useCallback(() => {
+    if (!videoRef.current || !canvasRef.current) return;
+    const canvas = canvasRef.current;
+    const video = videoRef.current;
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    canvas.getContext("2d")?.drawImage(video, 0, 0);
+    const dataUrl = canvas.toDataURL("image/jpeg", 0.85);
+    setPreview(dataUrl);
+    stopCamera();
+    analyzeImage(dataUrl);
+  }, [stopCamera, analyzeImage]);
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const dataUrl = ev.target?.result as string;
+      setPreview(dataUrl);
+      analyzeImage(dataUrl);
+    };
+    reader.readAsDataURL(file);
   };
 
   const analyzeText = async () => {

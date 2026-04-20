@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { CheckCircle, AlertTriangle, XCircle, Zap, ChevronDown, ChevronUp } from "lucide-react";
 import { Card } from "@/components/ui/Card";
@@ -66,22 +66,15 @@ const severityConfig = {
 
 export default function ResultsPage() {
   const router = useRouter();
-  const [result, setResult] = useState<SwingResult>(DEMO);
+  const [result] = useState<SwingResult>(DEMO);
   const [expanded, setExpanded] = useState<string | null>(null);
-  const [videoUrl, setVideoUrl] = useState<string>("");
-
-  useEffect(() => {
-    const raw = sessionStorage.getItem("pendingSwing");
-    if (raw) {
-      try {
-        const data = JSON.parse(raw);
-        if (data.videoUrl) setVideoUrl(data.videoUrl);
-        // In a real app, video would be sent for server-side pose analysis
-        // For now we show demo results with actual video playback
-        setResult((r) => ({ ...r, angle: data.angle, club: data.club }));
-      } catch {}
-    }
-  }, []);
+  const [videoUrl] = useState<string>(() => {
+    if (typeof window === "undefined") return "";
+    try {
+      const data = JSON.parse(sessionStorage.getItem("pendingSwing") ?? "{}");
+      return data.videoUrl ?? "";
+    } catch { return ""; }
+  });
 
   const tempoLabel = (ratio: number) => {
     if (ratio >= 2.5 && ratio <= 3.5) return "Excellent (3:1)";

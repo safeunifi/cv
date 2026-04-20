@@ -45,10 +45,9 @@ export default function CapturePage() {
   }, []);
 
   useEffect(() => {
-    startCamera(facingMode);
-    return () => {
-      streamRef.current?.getTracks().forEach((t) => t.stop());
-    };
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    startCamera(facingMode); // intentional: async camera init updates permission state
+    return () => { streamRef.current?.getTracks().forEach((t) => t.stop()); };
   }, [facingMode, startCamera]);
 
   const flipCamera = () => {

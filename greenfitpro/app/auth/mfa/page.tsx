@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { Shield, QrCode, CheckCircle } from "lucide-react";
 import { Button } from "@/components/ui/Button";
@@ -20,11 +20,17 @@ export default function MFAPage() {
   const [challengeId, setChallengeId] = useState("");
   const [hasMFA, setHasMFA] = useState(false);
 
-  useEffect(() => {
-    checkMFA();
+  const enrollMFA = useCallback(async () => {
+    const supabase = createClient();
+    const { data, error: err } = await supabase.auth.mfa.enroll({ factorType: "totp", issuer: "GreenFit Pro" });
+    if (err || !data) { setError(err?.message || "Enrollment failed"); return; }
+    setFactorId(data.id);
+    setQrCode(data.totp.qr_code);
+    const { data: challengeData } = await supabase.auth.mfa.challenge({ factorId: data.id });
+    if (challengeData) setChallengeId(challengeData.id);
   }, []);
 
-  const checkMFA = async () => {
+  const checkMFA = useCallback(async () => {
     const supabase = createClient();
     const { data } = await supabase.auth.mfa.listFactors();
     const verified = data?.totp?.filter((f) => f.status === "verified") ?? [];
@@ -38,17 +44,12 @@ export default function MFAPage() {
       setStep("enroll");
       enrollMFA();
     }
-  };
+  }, [enrollMFA]);
 
-  const enrollMFA = async () => {
-    const supabase = createClient();
-    const { data, error: err } = await supabase.auth.mfa.enroll({ factorType: "totp", issuer: "GreenFit Pro" });
-    if (err || !data) { setError(err?.message || "Enrollment failed"); return; }
-    setFactorId(data.id);
-    setQrCode(data.totp.qr_code);
-    const { data: challengeData } = await supabase.auth.mfa.challenge({ factorId: data.id });
-    if (challengeData) setChallengeId(challengeData.id);
-  };
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    checkMFA(); // intentional: async auth init on mount
+  }, [checkMFA]);
 
   const verify = async () => {
     if (code.length !== 6) { setError("Enter the 6-digit code from your authenticator app."); return; }
