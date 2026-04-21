@@ -1,0 +1,48 @@
+{
+  "expo": {
+    "name": "Swing Coach",
+    "slug": "golf-swing-analyzer",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "automatic",
+    "splash": {
+      "backgroundColor": "#1a6b2e",
+      "resizeMode": "contain"
+    },
+    "assetBundlePatterns": ["**/*"],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.golfswinganalyzer.app",
+      "infoPlist": {
+        "NSCameraUsageDescription": "Camera access is needed to record your golf swing for analysis",
+        "NSMicrophoneUsageDescription": "Microphone access is needed for video recording",
+        "NSPhotoLibraryUsageDescription": "Photo library access is needed to save and import swing videos"
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#1a6b2e"
+      },
+      "package": "com.golfswinganalyzer.app",
+      "permissions": [
+        "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO"
+      ]
+    },
+    "plugins": [
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Allow Swing Coach to access your camera to record golf swings."
+        }
+      ],
+      [
+        "expo-media-library",
+        {
+          "photosPermission": "Allow Swing Coach to save swing videos to your library."
+        }
+      ]
+    ]
+  }
+}
